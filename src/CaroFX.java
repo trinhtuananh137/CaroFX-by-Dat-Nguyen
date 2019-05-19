@@ -166,6 +166,7 @@ public class CaroFX extends Application {
         chessBoard() {
 
             super(boardEdgePixels, boardEdgePixels);
+            boardData = new int[boardEdge][boardEdge];
             doNewGame();
         }
 
@@ -183,9 +184,16 @@ public class CaroFX extends Application {
                 message.setText(" ");
                 return;
             }
-            boardData = new int[boardEdge][boardEdge];
-            currentPlayer = BLACK;
-            message.setText("BLACK: make your move");
+                boardData = new int[boardEdge][boardEdge];
+            if(board.currentPlayer == BLACK){
+                message.setText("BLACK:  make your move.");                
+                board.currentPlayer = BLACK;
+            }            
+            else if (board.currentPlayer == WHITE){
+                message.setText("WHITE:  make your move.");                
+                board.currentPlayer = WHITE;
+            }
+                
             gameInProgress = true;
             btnNewGame.setDisable(false);
             btnResign.setDisable(false);
@@ -197,15 +205,22 @@ public class CaroFX extends Application {
         // che do choi voi nguoi
         void doNewGame() {
             listUndo.clear();
+            for(int i = 0 ; i < boardEdge; i ++){
+                for (int j = 0; j < boardEdge;j++){
+                    boardData[i][j] = 0;
+                }
+            }
             isPlayWithCom = false;
             if (gameInProgress == true) {
                 // This should not be possible, but it doesn't hurt to check.
                 message.setText("Finish the current game first!");
                 return;
             }
-            boardData = new int[boardEdge][boardEdge];   // Start the game with an empty board.
+//            boardData = new int[boardEdge][boardEdge];   // Start the game with an empty board.
             //  This relies on the fact that EMPTY = 0.
-            currentPlayer = BLACK;   // BLACK moves first.
+            if (currentPlayer == BLACK){
+                currentPlayer = BLACK;
+            }else currentPlayer = WHITE;    // BLACK moves first.
             message.setText("Black:  Make your move.");
             gameInProgress = true;
             btnNewGame.setDisable(true);
@@ -223,7 +238,8 @@ public class CaroFX extends Application {
                 message.setText("There is no game in progress!");
                 return;
             }
-            if (currentPlayer == WHITE) {
+            if (isPlayWithCom == true) {gameOver("COMPUTER is win !!! You shoudn't giveup");}
+            else if (currentPlayer == WHITE) {
                 gameOver("WHITE resigns.  BLACK wins.");
             } else {
                 gameOver("BLACK resigns.  WHITE wins.");
@@ -342,13 +358,15 @@ public class CaroFX extends Application {
                 row = temp.x;
                 col = temp.y;
                 // make move
-                boardData[row][col] = currentPlayer;
+                boardData[row][col] = board.currentPlayer;
                 listUndo.add(new Point(row, col));
+                if(board.currentPlayer == BLACK) {board.currentPlayer = WHITE; message.setText("WHITE:  Make your move.");}
+                else {board.currentPlayer = BLACK; message.setText("BLACK:  Make your move.");}
                 drawBoard();
 
                 // kiem tra chien thang
                 if (winner(row, col) == true) {
-                    gameOver("Computer is win");
+                    gameOver("Computer is win !!! You shouldn't giveup");
                     drawWinLine();
                     return;
                 }
@@ -359,9 +377,8 @@ public class CaroFX extends Application {
                             emptySpace = true;
                         }
                     }
-                }
-                currentPlayer = BLACK;
-                message.setText("BLACK: make your move");
+                }                
+                
             }
 
         }  // end doClickSquare()
