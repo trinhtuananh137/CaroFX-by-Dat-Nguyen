@@ -8,6 +8,8 @@ package CaroFXbyDatNguyen;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
+
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,20 +49,23 @@ public class CaroFX extends Application {
     public Integer seconds = 0;
     public Integer minutes = 0;
     public Integer hours = 0;
-    public Timeline clock = null;
+    public Timeline clock = null; 
     
     private chessBoard board; // A canvas on which a checker board is drawn,
                          // defined by a static nested subclass.  Much of
                          // the game logic is defined in this class.
+    public List<Point> listUndo = new ArrayList<>();
 
     private int boardEdge = 30;
     private int boardEdgePixels = 602;
-    private Button newGameButton;  // Button for starting a new game.
+    private Button btnNewGame;  // Button for starting a new game.
     
-    private Button resignButton;   // Button that a player can use to end 
+    private Button btnResign;   // Button that a player can use to end 
                                     // the game by resigning.
 
-    private Button playWithCom;
+    private Button btnPlayWithCom;
+    
+    private Button btnUndo;
     
     private Label message;  // Label for displaying messages to the user.
     public static Label lbTime = new Label();
@@ -94,7 +99,7 @@ public class CaroFX extends Application {
         }), new KeyFrame(Duration.seconds(1)));
         clock.setCycleCount(Animation.INDEFINITE);
         clock.play();
-        
+        listUndo.clear();
         message = new Label("Click \"New Game\" to begin.");
         message.setTextFill( Color.rgb(100,255,100) ); // Light green.
         message.setFont( Font.font(null, FontWeight.BOLD, 18) );                
@@ -102,37 +107,39 @@ public class CaroFX extends Application {
         lbTime.setFont(new Font("TimeNewRoman", 20));
         lbTime.setTextFill(Color.YELLOW);
         lbTime.setLayoutX(650);
-        lbTime.setLayoutY(240);
+        lbTime.setLayoutY(300);
         
-        newGameButton = new Button("New Game");
-        resignButton = new Button("Resign");
-        playWithCom = new Button("playWithCom");
-
+        btnNewGame = new Button("New Game");
+        btnResign = new Button("Resign");
+        btnPlayWithCom = new Button("playWithCom");
+        btnUndo = new Button("Undo");
         board = new chessBoard(); 
         board.drawBoard();  
                 
-        playWithCom.setOnAction(e->board.doPlayWithCom());
+        btnPlayWithCom.setOnAction(e-> board.doPlayWithCom());
         
-        newGameButton.setOnAction( e -> board.doNewGame() );
-        resignButton.setOnAction( e -> board.doResign() );
+        btnNewGame.setOnAction( e -> board.doNewGame() );
+        btnResign.setOnAction( e -> board.doResign() );
+        btnUndo.setOnAction( e -> board.doUndoMove() );
         board.setOnMousePressed( e -> board.mousePressed(e) );
         
 
         board.relocate(20,20);
-        newGameButton.relocate(650, 60);
-        resignButton.relocate(650, 120);
+        btnNewGame.relocate(650, 60);
+        btnResign.relocate(650, 120);
+        btnUndo.relocate(650, 240);
         
-        playWithCom.relocate(650, 180);
+        btnPlayWithCom.relocate(650, 180);
         message.relocate(20, 650);
         
         
-        resignButton.setManaged(false);
-        resignButton.resize(100,30);
-        newGameButton.setManaged(false);
-        newGameButton.resize(100,30);
+        btnResign.setManaged(false);
+        btnResign.resize(100,30);
+        btnNewGame.setManaged(false);
+        btnNewGame.resize(100,30);
         
-        playWithCom.setManaged(false);
-        playWithCom.resize(100, 30);              
+        btnPlayWithCom.setManaged(false);
+        btnPlayWithCom.resize(100, 30);              
         
         Pane root = new Pane();
         
@@ -140,7 +147,7 @@ public class CaroFX extends Application {
         root.setPrefHeight(700);
                 
 
-        root.getChildren().addAll(board, newGameButton, resignButton, message, playWithCom, lbTime);
+        root.getChildren().addAll(board, btnNewGame, btnResign, message, btnPlayWithCom, lbTime,btnUndo);
         clock.play();
         root.setStyle("-fx-background-color: darkgreen; "
                            + "-fx-border-color: darkred; -fx-border-width:3");
@@ -170,6 +177,13 @@ public class CaroFX extends Application {
         
         // che do choi vs may
         void doPlayWithCom(){
+            btnPlayWithCom.setDisable(true);
+            if (isPlayWithCom == true){
+                seconds = 0;
+                minutes = 0;
+                hours = 0;    
+                clock.play();
+            }
             isPlayWithCom = true;
             if(gameInProgress == true){
                 message.setText(" ");
@@ -179,13 +193,15 @@ public class CaroFX extends Application {
             currentPlayer = BLACK;
             message.setText("BLACK: make your move");
             gameInProgress = true;
-            newGameButton.setDisable(false);
-            resignButton.setDisable(false);
-            playWithCom.setDisable(true);
+            btnNewGame.setDisable(false);
+            btnResign.setDisable(false);
+            btnPlayWithCom.setDisable(true);
             drawBoard();
+            
         }
         // che do choi voi nguoi
         void doNewGame() {
+            listUndo.clear();
             isPlayWithCom = false;
             if (gameInProgress == true) {
                     // This should not be possible, but it doesn't hurt to check.
@@ -197,9 +213,9 @@ public class CaroFX extends Application {
             currentPlayer = BLACK;   // BLACK moves first.
             message.setText("Black:  Make your move.");
             gameInProgress = true;
-            newGameButton.setDisable(true);
-            resignButton.setDisable(false);
-            playWithCom.setDisable(false);
+            btnNewGame.setDisable(true);
+            btnResign.setDisable(false);
+            btnPlayWithCom.setDisable(false);
             seconds = 0;
             minutes = 0;
             hours = 0;    
@@ -207,7 +223,7 @@ public class CaroFX extends Application {
             drawBoard();
         }
       
-        void doResign() {
+        void doResign() {            
             if (gameInProgress == false) {  // Should be impossible.
                 message.setText("There is no game in progress!");
                 return;
@@ -218,11 +234,58 @@ public class CaroFX extends Application {
                 gameOver("BLACK resigns.  WHITE wins.");            
             clock.pause();
         }
+        
+        void doUndoMove() {
+            clock.play();
+            int len = listUndo.size();     
+            if(len > 0 && isPlayWithCom == true){
+                Point p = listUndo.get(len - 1);  
+                Point _p = listUndo.get(len - 2);  
+                
+                if (board.boardData[_p.x][_p.y] == 1) {
+                    board.currentPlayer = BLACK;
+                    message.setText("BLACK:  Make your move.");
+                }
+                if (board.boardData[_p.x][_p.y] == 2) {
+                    board.currentPlayer = WHITE;
+                    message.setText("WHITE:  Make your move.");
+                }
+                
+                board.boardData[p.x][p.y] = 0;
+                board.boardData[_p.x][_p.y] = 0;
+                listUndo.remove(listUndo.size() - 1);
+                listUndo.remove(listUndo.size() - 1);
+                board.drawBoard();
+                board.gameInProgress = true;
+                btnNewGame.setDisable(false);
+                btnResign.setDisable(false);
+//                btnPlayWithCom.setDisable(false);
+            }
+            if (len > 0){
+                Point p = listUndo.get(len - 1);                                               
+                if (board.boardData[p.x][p.y] == 1) {
+                    board.currentPlayer = BLACK;
+                    message.setText("BLACK:  Make your move.");
+                }
+                if (board.boardData[p.x][p.y] == 2) {
+                    board.currentPlayer = WHITE;
+                    message.setText("WHITE:  Make your move.");
+                }
+                board.boardData[p.x][p.y] = 0;
+                listUndo.remove(listUndo.size() - 1);
+                board.drawBoard();
+                board.gameInProgress = true;
+                btnNewGame.setDisable(false);
+                btnResign.setDisable(false);
+                btnPlayWithCom.setDisable(false);
+        }else return;  
+        
+    }
        
         void gameOver(String str) {
             message.setText(str);
-            newGameButton.setDisable(false);
-            resignButton.setDisable(true);
+            btnNewGame.setDisable(false);
+            btnResign.setDisable(true);
             gameInProgress = false;
             clock.pause();
         }
@@ -238,6 +301,7 @@ public class CaroFX extends Application {
             }
 
             boardData[row][col] = currentPlayer;  // Make the move.
+            listUndo.add(new Point(row,col));
             drawBoard();
 
             if (winner(row,col)) {  // First, check for a winner.
@@ -277,6 +341,7 @@ public class CaroFX extends Application {
                  col = temp.y;
                  // make move
                  boardData[row][col] = currentPlayer;
+                 listUndo.add(new Point(row,col));
                  drawBoard();
                  
                  // kiem tra chien thang
@@ -296,9 +361,6 @@ public class CaroFX extends Application {
         }  // end doClickSquare()
         
         // ham danh gia ban co 
-        private void EvalChessBoard(int player, int row, int col){
-            
-        }
 
         private boolean winner(int row, int col) {
 
@@ -777,7 +839,8 @@ public class CaroFX extends Application {
         lbTime.setText(String.valueOf("Time : " + _hours + ":" + _minutes + ":" + _seconds));
        
         seconds++;
-    }
-
+    }       
+    
+    
 
 } // end class CaroFX
