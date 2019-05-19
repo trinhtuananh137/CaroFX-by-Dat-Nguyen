@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -23,6 +26,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.input.MouseEvent;
+import javafx.util.Duration;
 
 /**
  * This panel lets two users play Go Moku against each other.
@@ -40,6 +44,10 @@ public class CaroFX extends Application {
              EMPTY = 0,       //     of squares on the board.  The constants
              BLACK = 1,       //     BLACK and WHITE are also used to
              WHITE = 2;       //     represent the current player.
+    public Integer seconds = 0;
+    public Integer minutes = 0;
+    public Integer hours = 0;
+    public Timeline clock = null;
     
     private chessBoard board; // A canvas on which a checker board is drawn,
                          // defined by a static nested subclass.  Much of
@@ -55,6 +63,7 @@ public class CaroFX extends Application {
     private Button playWithCom;
     
     private Label message;  // Label for displaying messages to the user.
+    public static Label lbTime = new Label();
     
     
     private boolean isPlayWithCom = false;
@@ -80,11 +89,21 @@ public class CaroFX extends Application {
      * the only thing that is done in the main Checkers class.)
      */
     public void start(Stage stage) {             
+        clock = new Timeline(new KeyFrame(Duration.ZERO, e -> {
+            updateTimer();            
+        }), new KeyFrame(Duration.seconds(1)));
+        clock.setCycleCount(Animation.INDEFINITE);
+        clock.play();
         
         message = new Label("Click \"New Game\" to begin.");
         message.setTextFill( Color.rgb(100,255,100) ); // Light green.
         message.setFont( Font.font(null, FontWeight.BOLD, 18) );                
-
+        
+        lbTime.setFont(new Font("TimeNewRoman", 20));
+        lbTime.setTextFill(Color.YELLOW);
+        lbTime.setLayoutX(650);
+        lbTime.setLayoutY(240);
+        
         newGameButton = new Button("New Game");
         resignButton = new Button("Resign");
         playWithCom = new Button("playWithCom");
@@ -121,7 +140,8 @@ public class CaroFX extends Application {
         root.setPrefHeight(700);
                 
 
-        root.getChildren().addAll(board, newGameButton, resignButton, message, playWithCom);
+        root.getChildren().addAll(board, newGameButton, resignButton, message, playWithCom, lbTime);
+        clock.play();
         root.setStyle("-fx-background-color: darkgreen; "
                            + "-fx-border-color: darkred; -fx-border-width:3");
         Scene scene = new Scene(root);
@@ -180,6 +200,10 @@ public class CaroFX extends Application {
             newGameButton.setDisable(true);
             resignButton.setDisable(false);
             playWithCom.setDisable(false);
+            seconds = 0;
+            minutes = 0;
+            hours = 0;    
+            clock.play();
             drawBoard();
         }
       
@@ -191,7 +215,8 @@ public class CaroFX extends Application {
             if (currentPlayer == WHITE)
                 gameOver("WHITE resigns.  BLACK wins.");
             else
-                gameOver("BLACK resigns.  WHITE wins.");
+                gameOver("BLACK resigns.  WHITE wins.");            
+            clock.pause();
         }
        
         void gameOver(String str) {
@@ -199,6 +224,7 @@ public class CaroFX extends Application {
             newGameButton.setDisable(false);
             resignButton.setDisable(true);
             gameInProgress = false;
+            clock.pause();
         }
        
         void doClickSquare(int row, int col, boolean mode) {
@@ -723,6 +749,34 @@ public class CaroFX extends Application {
              eBoard = new int[boardEdge][boardEdge];
         }
        
+    }
+    void updateTimer() {
+        String _seconds;
+        String _minutes;
+        String _hours;
+        if (seconds == 60) {
+            seconds = 00;
+            minutes++;
+        }
+        if (minutes == 60) {
+            minutes = 00;
+            hours++;
+        }
+                
+        if (seconds < 10) {
+            _seconds = "0" + seconds;            
+        }else _seconds = seconds.toString();
+        
+        if (minutes < 10) {
+            _minutes = "0" + minutes;            
+        }
+        else _minutes = minutes.toString();
+        if (hours < 10) {
+            _hours = "0" + hours;         
+        }else _hours = hours.toString();
+        lbTime.setText(String.valueOf("Time : " + _hours + ":" + _minutes + ":" + _seconds));
+       
+        seconds++;
     }
 
 
